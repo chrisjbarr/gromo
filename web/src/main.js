@@ -5,6 +5,10 @@ import store from './store';
 
 import '@/assets/css/tailwind.css';
 
+import { useFilters } from './core/filters';
+
+useFilters(Vue);
+
 Vue.config.productionTip = false;
 
 new Vue({

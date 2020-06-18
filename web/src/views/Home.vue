@@ -3,7 +3,9 @@
     <div v-if="gromoers.length > 0">
       <label>Hello, who is going to <span class="font-semibold italic">gromo</span> today?</label>
       <ul class="my-4 divide-y divide-blue-500">
-        <li class="py-2" v-for="gromoer in gromoers" :key="gromoer.name">{{ gromoer.name }}</li>
+        <li v-for="gromoer in gromoers" :key="gromoer.name">
+          <button class="w-full p-2" @click="login(gromoer.id)">{{ gromoer.name }}</button>
+        </li>
       </ul>
     </div>
 
@@ -43,6 +45,10 @@ export default {
   methods: {
     addGromoer() {
       this.$store.commit('add-gromoer', this.name);
+    },
+    login(id) {
+      this.$store.commit('gromo-login', id);
+      this.$router.push({ name: `choose-activity` });
     }
   },
   computed: {

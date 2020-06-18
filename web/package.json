@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "core-js": "^3.6.5",
+    "date-fns": "^2.14.0",
     "tailwindcss": "^1.4.6",
     "uuid": "^8.1.0",
     "vue": "^2.6.11",
