@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useStore } from '../store';
 import { Header, PrimaryButton } from '../components';
+import { demoData } from '../demo';
 import type { GromoData } from '../types';
 
 export default function Data() {
@@ -38,7 +39,7 @@ export default function Data() {
 
   return (
     <div className="safe-bottom">
-      <Header title="Data & Backup" back />
+      <Header title="Data & Backup" back="/" showHome={false} />
 
       <p className="mb-6 text-sm leading-relaxed text-slate-500">
         Your workouts are saved on this device. Export a backup file to keep them safe or move them to another phone.
@@ -66,6 +67,16 @@ export default function Data() {
             e.target.value = '';
           }}
         />
+
+        <button
+          onClick={() => {
+            replaceData(demoData());
+            setMsg('Loaded ~6 weeks of demo history. Reset below to clear it.');
+          }}
+          className="w-full rounded-xl border border-slate-300 bg-white py-3 text-sm font-medium text-slate-600 active:bg-slate-100"
+        >
+          Load demo history
+        </button>
 
         <button
           onClick={() => {

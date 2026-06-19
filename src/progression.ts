@@ -52,6 +52,27 @@ export function lastLog(logs: SessionLog[], exerciseId: string): SessionLog | un
   return recentLogs(logs, exerciseId)[0];
 }
 
+// Human-readable summary of a logged session's sets.
+//  - time:        "20s · 25s · 30s"
+//  - bodyweight:  "12 · 12 · 10"
+//  - weighted, all sets same weight:  "11, 11, 10, 10 @ 105 lbs"
+//  - weighted, mixed weights (drop sets): "10×35 · 10×20" (per-set)
+export function formatSets(ex: ExerciseDef, sets: SetEntry[]): string {
+  if (ex.kind === 'bodyweight' && ex.metric === 'time') {
+    return sets.map((s) => `${s.seconds ?? 0}s`).join(' · ');
+  }
+  if (ex.kind === 'bodyweight') {
+    return sets.map((s) => `${s.reps ?? 0}`).join(' · ');
+  }
+  const weights = sets.map((s) => s.weight ?? 0);
+  const allSame = weights.every((w) => w === weights[0]);
+  if (allSame) {
+    const reps = sets.map((s) => s.reps ?? 0).join(', ');
+    return `${reps} @ ${weights[0]} lbs`;
+  }
+  return sets.map((s) => `${s.reps ?? 0}×${s.weight ?? 0}`).join(' · ');
+}
+
 // Format the target as "4 × 8-10" (reps) or "3 × 20-30 sec" (time).
 export function formatTarget(ex: ExerciseDef): string {
   const range = ex.repLow === ex.repHigh ? `${ex.repLow}` : `${ex.repLow}-${ex.repHigh}`;
