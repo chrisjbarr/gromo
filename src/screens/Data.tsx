@@ -40,9 +40,9 @@ export default function Data() {
     <div className="safe-bottom">
       <Header title="Data & Backup" back />
 
-      <p className="mb-6 text-sm leading-relaxed text-slate-400">
+      <p className="mb-6 text-sm leading-relaxed text-slate-500">
         Your workouts are saved on this device. Export a backup file to keep them safe or move them to another phone.
-        Currently tracking <span className="text-slate-200">{sessionCount}</span> logged{' '}
+        Currently tracking <span className="font-semibold text-slate-800">{sessionCount}</span> logged{' '}
         {sessionCount === 1 ? 'session' : 'sessions'}.
       </p>
 
@@ -51,7 +51,7 @@ export default function Data() {
 
         <button
           onClick={() => fileInput.current?.click()}
-          className="w-full rounded-xl border border-slate-700 py-3 text-base font-semibold text-slate-200 active:bg-slate-800"
+          className="w-full rounded-xl border border-slate-300 bg-white py-3 text-base font-semibold text-slate-700 active:bg-slate-100"
         >
           Import backup
         </button>
@@ -74,13 +74,13 @@ export default function Data() {
               setMsg('Reset to the starting program.');
             }
           }}
-          className="w-full rounded-xl py-3 text-sm text-rose-400 active:bg-slate-800"
+          className="w-full rounded-xl py-3 text-sm font-medium text-rose-500 active:bg-rose-50"
         >
           Reset to starting program
         </button>
       </div>
 
-      {msg && <p className="mt-4 rounded-lg bg-slate-800/60 p-3 text-sm text-slate-300">{msg}</p>}
+      {msg && <p className="mt-4 rounded-lg bg-white p-3 text-sm text-slate-600 ring-1 ring-slate-200">{msg}</p>}
     </div>
   );
 }
