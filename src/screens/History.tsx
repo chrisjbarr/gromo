@@ -54,23 +54,23 @@ export default function History() {
     <div className="safe-bottom">
       <Header title={ex.name} subtitle="History" back />
 
-      {logs.length === 0 && <p className="text-slate-400">No sessions logged yet.</p>}
+      {logs.length === 0 && <p className="text-slate-500">No sessions logged yet.</p>}
 
       {logs.length >= 2 && (
-        <div className="mb-5 rounded-2xl border border-slate-800 bg-slate-800/50 p-4">
-          <div className="mb-2 text-xs text-slate-400">Trend — {metricLabel}</div>
+        <div className="mb-5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <div className="mb-2 text-xs font-medium text-slate-500">Trend — {metricLabel}</div>
           <Sparkline values={scores} />
         </div>
       )}
 
       <div className="space-y-2">
         {[...logs].reverse().map((log) => (
-          <div key={log.id} className="flex items-center justify-between rounded-xl bg-slate-800/40 px-4 py-3">
+          <div key={log.id} className="flex items-center justify-between rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200">
             <div>
-              <div className="text-sm text-slate-300">{fmtDate(log.performedOn)}</div>
-              <div className="text-xs text-slate-500">{fmtSets(ex, log.sets)}</div>
+              <div className="text-sm font-medium text-slate-700">{fmtDate(log.performedOn)}</div>
+              <div className="text-xs text-slate-400">{fmtSets(ex, log.sets)}</div>
             </div>
-            {log.completed && <span className="text-sm text-emerald-400">✅ leveled up</span>}
+            {log.completed && <span className="text-sm font-medium text-emerald-600">✅ leveled up</span>}
           </div>
         ))}
       </div>

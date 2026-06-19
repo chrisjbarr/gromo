@@ -5,39 +5,76 @@ import { Header, PrimaryButton } from '../components';
 import { formatTarget, isCompleted, lastLog } from '../progression';
 import type { SetEntry, ExerciseDef } from '../types';
 
-// Build the initial set rows: prefill weight from working weight, reps blank.
+// Reps default to the last session's reps for that set, else the middle of the range.
+function defaultReps(ex: ExerciseDef, setIndex: number, lastSets?: SetEntry[]): number {
+  const prev = lastSets?.[setIndex]?.reps;
+  if (prev != null) return prev;
+  return Math.round((ex.repLow + ex.repHigh) / 2);
+}
+
+function defaultSeconds(ex: ExerciseDef, setIndex: number, lastSets?: SetEntry[]): number {
+  const prev = lastSets?.[setIndex]?.seconds;
+  if (prev != null) return prev;
+  return Math.round((ex.repLow + ex.repHigh) / 2);
+}
+
+// Build the initial set rows, pre-filled and ready to nudge.
 function initialSets(ex: ExerciseDef, weight: number | undefined, lastSets?: SetEntry[]): SetEntry[] {
   return Array.from({ length: ex.sets }, (_, i) => {
     if (ex.kind === 'bodyweight' && ex.metric === 'time') {
-      return { seconds: lastSets?.[i]?.seconds };
+      return { seconds: defaultSeconds(ex, i, lastSets) };
     }
     if (ex.kind === 'bodyweight') {
-      return { reps: lastSets?.[i]?.reps };
+      return { reps: defaultReps(ex, i, lastSets) };
     }
-    return { reps: undefined, weight: weight ?? ex.startWeight };
+    return { reps: defaultReps(ex, i, lastSets), weight: weight ?? ex.startWeight };
   });
 }
 
-function NumberField({
+function Stepper({
   label,
   value,
+  step,
+  min,
   onChange,
 }: {
   label: string;
   value: number | undefined;
-  onChange: (v: number | undefined) => void;
+  step: number;
+  min: number;
+  onChange: (v: number) => void;
 }) {
+  const v = value ?? 0;
+  const bump = (delta: number) => onChange(Math.max(min, Math.round((v + delta) * 100) / 100));
   return (
-    <label className="flex flex-1 flex-col gap-1">
-      <span className="text-xs text-slate-400">{label}</span>
-      <input
-        type="number"
-        inputMode="numeric"
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-        className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-lg text-white focus:border-blue-500 focus:outline-none"
-      />
-    </label>
+    <div className="flex flex-1 flex-col gap-1">
+      <span className="text-xs font-medium text-slate-500">{label}</span>
+      <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-300 bg-white">
+        <button
+          type="button"
+          onClick={() => bump(-step)}
+          aria-label={`Decrease ${label}`}
+          className="px-3 text-xl font-bold text-slate-500 active:bg-slate-100"
+        >
+          −
+        </button>
+        <input
+          type="number"
+          inputMode="decimal"
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value === '' ? 0 : Number(e.target.value))}
+          className="w-full min-w-0 border-x border-slate-200 py-2.5 text-center text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-200"
+        />
+        <button
+          type="button"
+          onClick={() => bump(step)}
+          aria-label={`Increase ${label}`}
+          className="px-3 text-xl font-bold text-slate-500 active:bg-slate-100"
+        >
+          +
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -50,9 +87,7 @@ export default function LogExercise() {
   const last = ex ? lastLog(data.logs, ex.id) : undefined;
   const weight = ex ? data.workingWeight[ex.id] : undefined;
 
-  const [sets, setSets] = useState<SetEntry[]>(() =>
-    ex ? initialSets(ex, weight, last?.sets) : [],
-  );
+  const [sets, setSets] = useState<SetEntry[]>(() => (ex ? initialSets(ex, weight, last?.sets) : []));
 
   const completed = useMemo(() => (ex ? isCompleted(ex, sets) : false), [ex, sets]);
 
@@ -74,31 +109,41 @@ export default function LogExercise() {
       <Header title={ex.name} subtitle={formatTarget(ex) + (weight != null ? ` @ ${weight} lbs` : '')} back />
 
       {ex.note && (
-        <p className="mb-4 rounded-xl bg-slate-800/60 p-3 text-sm leading-relaxed text-slate-300">{ex.note}</p>
+        <p className="mb-4 rounded-xl bg-white p-3 text-sm leading-relaxed text-slate-600 ring-1 ring-slate-200">
+          {ex.note}
+        </p>
       )}
 
       {last && (
-        <p className="mb-4 text-sm text-slate-400">
+        <p className="mb-4 text-sm text-slate-500">
           Last time:{' '}
-          {isTime
-            ? last.sets.map((s) => `${s.seconds ?? 0}s`).join(' · ')
-            : ex.kind === 'bodyweight'
-              ? last.sets.map((s) => `${s.reps ?? 0}`).join(' · ')
-              : last.sets.map((s) => `${s.reps ?? 0}×${s.weight ?? 0}`).join(' · ')}
+          <span className="font-medium text-slate-700">
+            {isTime
+              ? last.sets.map((s) => `${s.seconds ?? 0}s`).join(' · ')
+              : ex.kind === 'bodyweight'
+                ? last.sets.map((s) => `${s.reps ?? 0}`).join(' · ')
+                : last.sets.map((s) => `${s.reps ?? 0}×${s.weight ?? 0}`).join(' · ')}
+          </span>
         </p>
       )}
 
       <div className="space-y-3">
         {sets.map((s, i) => (
           <div key={i} className="flex items-end gap-3">
-            <span className="w-8 pb-2 text-sm font-semibold text-slate-500">{i + 1}</span>
+            <span className="w-6 pb-2.5 text-sm font-bold text-slate-400">{i + 1}</span>
             {isTime ? (
-              <NumberField label="Seconds" value={s.seconds} onChange={(v) => update(i, { seconds: v })} />
+              <Stepper label="Seconds" value={s.seconds} step={5} min={0} onChange={(v) => update(i, { seconds: v })} />
             ) : (
-              <NumberField label="Reps" value={s.reps} onChange={(v) => update(i, { reps: v })} />
+              <Stepper label="Reps" value={s.reps} step={1} min={0} onChange={(v) => update(i, { reps: v })} />
             )}
             {isWeighted && (
-              <NumberField label="Weight (lbs)" value={s.weight} onChange={(v) => update(i, { weight: v })} />
+              <Stepper
+                label="Weight (lbs)"
+                value={s.weight}
+                step={ex.increment ?? 5}
+                min={0}
+                onChange={(v) => update(i, { weight: v })}
+              />
             )}
           </div>
         ))}
@@ -106,35 +151,32 @@ export default function LogExercise() {
 
       <div className="mt-4 flex gap-3 text-sm">
         <button
-          onClick={() => setSets((p) => [...p, isTime ? { seconds: undefined } : { reps: undefined, weight: isWeighted ? weight ?? ex.startWeight : undefined }])}
-          className="rounded-lg border border-slate-700 px-3 py-1.5 text-slate-300 active:bg-slate-800"
+          onClick={() => setSets((p) => [...p, p.length ? { ...p[p.length - 1] } : {}])}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-600 active:bg-slate-100"
         >
           + Add set
         </button>
         {sets.length > 1 && (
           <button
             onClick={() => setSets((p) => p.slice(0, -1))}
-            className="rounded-lg border border-slate-700 px-3 py-1.5 text-slate-400 active:bg-slate-800"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-500 active:bg-slate-100"
           >
             − Remove set
           </button>
         )}
-        <Link
-          to={`/history/${ex.id}`}
-          className="ml-auto self-center text-slate-400 underline-offset-2 hover:underline"
-        >
+        <Link to={`/history/${ex.id}`} className="ml-auto self-center font-medium text-indigo-600 active:underline">
           History
         </Link>
       </div>
 
       {completed && ex.increment && (
-        <div className="mt-5 rounded-xl bg-emerald-500/15 p-3 text-sm font-medium text-emerald-300">
+        <div className="mt-5 rounded-xl bg-emerald-50 p-3 text-sm font-medium text-emerald-700 ring-1 ring-emerald-200">
           ✅ Hit every set at {ex.repHigh} reps — next time go {(weight ?? ex.startWeight ?? 0) + ex.increment} lbs (+
           {ex.increment}).
         </div>
       )}
 
-      <div className="safe-bottom fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-slate-800 bg-slate-900/95 p-4 backdrop-blur">
+      <div className="safe-bottom fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-slate-200 bg-[#eef1f6]/95 p-4 backdrop-blur">
         <PrimaryButton onClick={save}>Save workout</PrimaryButton>
       </div>
     </div>

@@ -1,7 +1,8 @@
 import { Link, useParams } from 'react-router-dom';
 import { useStore } from '../store';
-import { Header, Card, TrendBadge } from '../components';
+import { Header, TrendBadge } from '../components';
 import { formatTarget, trendFor, lastLog } from '../progression';
+import { accentFor } from '../accents';
 import type { SetEntry, ExerciseDef } from '../types';
 
 function summarizeLast(ex: ExerciseDef, sets: SetEntry[]): string {
@@ -17,9 +18,12 @@ function summarizeLast(ex: ExerciseDef, sets: SetEntry[]): string {
 export default function Day() {
   const { dayId } = useParams();
   const { data } = useStore();
-  const day = data.days.find((d) => d.id === dayId);
+  const dayIndex = data.days.findIndex((d) => d.id === dayId);
+  const day = data.days[dayIndex];
 
   if (!day) return <Header title="Not found" back />;
+
+  const accent = accentFor(dayIndex);
 
   return (
     <div className="safe-bottom">
@@ -33,22 +37,35 @@ export default function Day() {
           const weight = data.workingWeight[ex.id];
 
           return (
-            <Link key={ex.id} to={`/day/${day.id}/log/${ex.id}`}>
-              <Card onClick={() => {}}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="font-semibold text-white">{ex.name}</div>
-                    <div className="mt-0.5 text-sm text-slate-400">
+            <Link
+              key={ex.id}
+              to={`/day/${day.id}/log/${ex.id}`}
+              className="relative block overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 active:scale-[0.99]"
+            >
+              <span className={`absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b ${accent.bar}`} />
+              <div className="flex items-center justify-between gap-3 py-4 pl-5 pr-4">
+                <div className="min-w-0">
+                  <div className="font-bold text-slate-900">{ex.name}</div>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${accent.bg} ${accent.text}`}>
                       {formatTarget(ex)}
-                      {weight != null && <span className="text-slate-300"> @ {weight} lbs</span>}
-                    </div>
-                    {last && (
-                      <div className="mt-1 truncate text-xs text-slate-500">last: {summarizeLast(ex, last.sets)}</div>
-                    )}
+                    </span>
+                    {last && <span className="truncate text-xs text-slate-400">last: {summarizeLast(ex, last.sets)}</span>}
                   </div>
-                  <TrendBadge trend={trend} />
                 </div>
-              </Card>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  <TrendBadge trend={trend} />
+                  {weight != null ? (
+                    <div className="text-right">
+                      <div className="text-lg font-black leading-none text-slate-900">{weight}</div>
+                      <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400">lbs</div>
+                    </div>
+                  ) : (
+                    <span className="text-xl text-slate-300">›</span>
+                  )}
+                </div>
+              </div>
             </Link>
           );
         })}
