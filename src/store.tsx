@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { GromoData, SessionLog, SetEntry, ExerciseDef } from './types';
 import { buildSeed } from './seed';
 import { isCompleted } from './progression';
+import { newId } from './id';
 
 const STORAGE_KEY = 'gromo';
 
@@ -42,7 +43,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setData((prev) => {
       const completed = isCompleted(ex, sets);
       const log: SessionLog = {
-        id: crypto.randomUUID(),
+        id: newId(),
         exerciseId: ex.id,
         dayId,
         performedOn: new Date().toISOString(),

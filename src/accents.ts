@@ -7,10 +7,10 @@ export interface Accent {
 }
 
 const ACCENTS: Accent[] = [
-  { bar: 'from-indigo-500 to-violet-500', text: 'text-indigo-600', bg: 'bg-indigo-50' },
-  { bar: 'from-emerald-500 to-teal-500', text: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { bar: 'from-amber-500 to-orange-500', text: 'text-amber-600', bg: 'bg-amber-50' },
-  { bar: 'from-sky-500 to-blue-500', text: 'text-sky-600', bg: 'bg-sky-50' },
+  { bar: 'from-steel-400 to-steel-700', text: 'text-steel-600', bg: 'bg-steel-50' },
+  { bar: 'from-teal-500 to-emerald-600', text: 'text-teal-700', bg: 'bg-teal-50' },
+  { bar: 'from-amber-500 to-orange-600', text: 'text-amber-700', bg: 'bg-amber-50' },
+  { bar: 'from-rose-400 to-rose-600', text: 'text-rose-600', bg: 'bg-rose-50' },
 ];
 
 export function accentFor(index: number): Accent {

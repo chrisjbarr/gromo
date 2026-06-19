@@ -1,19 +1,8 @@
 import { Link, useParams } from 'react-router-dom';
 import { useStore } from '../store';
 import { Header, TrendBadge } from '../components';
-import { formatTarget, trendFor, lastLog } from '../progression';
+import { formatTarget, trendFor, lastLog, formatSets } from '../progression';
 import { accentFor } from '../accents';
-import type { SetEntry, ExerciseDef } from '../types';
-
-function summarizeLast(ex: ExerciseDef, sets: SetEntry[]): string {
-  if (ex.kind === 'bodyweight' && ex.metric === 'time') {
-    return sets.map((s) => `${s.seconds ?? 0}s`).join(' · ');
-  }
-  if (ex.kind === 'bodyweight') {
-    return sets.map((s) => `${s.reps ?? 0}`).join(' · ');
-  }
-  return sets.map((s) => `${s.reps ?? 0}×${s.weight ?? 0}`).join(' · ');
-}
 
 export default function Day() {
   const { dayId } = useParams();
@@ -21,13 +10,13 @@ export default function Day() {
   const dayIndex = data.days.findIndex((d) => d.id === dayId);
   const day = data.days[dayIndex];
 
-  if (!day) return <Header title="Not found" back />;
+  if (!day) return <Header title="Not found" back="/" />;
 
   const accent = accentFor(dayIndex);
 
   return (
     <div className="safe-bottom">
-      <Header title={day.name} subtitle={day.subtitle} back />
+      <Header title={day.name} subtitle={day.subtitle} back="/" showHome={false} />
       <div className="space-y-3">
         {day.exerciseIds.map((exId) => {
           const ex = data.exercises.find((e) => e.id === exId);
@@ -50,7 +39,7 @@ export default function Day() {
                     <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${accent.bg} ${accent.text}`}>
                       {formatTarget(ex)}
                     </span>
-                    {last && <span className="truncate text-xs text-slate-400">last: {summarizeLast(ex, last.sets)}</span>}
+                    {last && <span className="truncate text-xs text-slate-400">last: {formatSets(ex, last.sets)}</span>}
                   </div>
                 </div>
 
