@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../store';
 import { Header, PrimaryButton } from '../components';
-import { formatTarget, isCompleted, lastLog, formatSets } from '../progression';
+import { formatTarget, isCompleted, lastLog, formatSets, relativeWhen } from '../progression';
 import type { SetEntry, ExerciseDef } from '../types';
 
 // Reps default to the last session's reps for that set, else the middle of the range.
@@ -105,35 +105,35 @@ function Stepper({
   );
 }
 
-// "5 days ago", "3 weeks ago", "today" — relative phrasing for the last session.
-function relativeWhen(iso: string): string {
-  const then = new Date(iso).getTime();
-  const days = Math.round((Date.now() - then) / 86_400_000);
-  if (days <= 0) return 'today';
-  if (days === 1) return 'yesterday';
-  if (days < 14) return `${days} days ago`;
-  const weeks = Math.round(days / 7);
-  if (weeks < 9) return `${weeks} weeks ago`;
-  const months = Math.round(days / 30);
-  return `${months} month${months === 1 ? '' : 's'} ago`;
-}
 
 export default function LogExercise() {
-  const { dayId, exerciseId } = useParams();
-  const { data, logSession } = useStore();
+  const { dayId, exerciseId, logId } = useParams();
+  const { data, logSession, updateSession, deleteSession } = useStore();
   const nav = useNavigate();
 
-  const ex = data.exercises.find((e) => e.id === exerciseId);
+  const isEditing = !!logId;
+  const editLog = isEditing ? data.logs.find((l) => l.id === logId) : undefined;
+
+  // In edit mode the exercise comes from the log; otherwise from the route.
+  const ex = data.exercises.find((e) => e.id === (isEditing ? editLog?.exerciseId : exerciseId));
   const last = ex ? lastLog(data.logs, ex.id) : undefined;
   const weight = ex ? data.workingWeight[ex.id] : undefined;
 
-  const [sets, setSets] = useState<SetEntry[]>(() =>
-    ex ? initialSets(ex, weight, last?.sets, last?.completed) : [],
-  );
+  // Edit mode prefills the log's actual sets; log mode prefills from last session.
+  const [sets, setSets] = useState<SetEntry[]>(() => {
+    if (!ex) return [];
+    if (isEditing && editLog) return editLog.sets.map((s) => ({ ...s }));
+    return initialSets(ex, weight, last?.sets, last?.completed);
+  });
 
   const completed = useMemo(() => (ex ? isCompleted(ex, sets) : false), [ex, sets]);
 
-  if (!ex) return <Header title="Not found" back={`/day/${dayId}`} />;
+  // Where back / save returns to.
+  const returnTo = isEditing
+    ? `/history/${ex?.id ?? ''}`
+    : `/day/${dayId}`;
+
+  if (!ex || (isEditing && !editLog)) return <Header title="Not found" back="/" />;
 
   const isTime = ex.kind === 'bodyweight' && ex.metric === 'time';
   const isWeighted = ex.kind !== 'bodyweight';
@@ -142,21 +142,37 @@ export default function LogExercise() {
     setSets((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
 
   const save = () => {
-    logSession(ex, dayId!, sets);
-    nav(`/day/${dayId}`);
+    if (isEditing && editLog) updateSession(editLog.id, ex, sets);
+    else logSession(ex, dayId!, sets);
+    nav(returnTo);
+  };
+
+  const remove = () => {
+    if (editLog && confirm('Delete this logged session?')) {
+      deleteSession(editLog.id);
+      nav(returnTo);
+    }
   };
 
   return (
     <div className="safe-bottom pb-28">
-      <Header title={ex.name} subtitle={formatTarget(ex) + (weight != null ? ` @ ${weight} lbs` : '')} back={`/day/${dayId}`} />
+      <Header
+        title={isEditing ? `Edit · ${ex.name}` : ex.name}
+        subtitle={
+          isEditing && editLog
+            ? `Logged ${relativeWhen(editLog.performedOn)}`
+            : formatTarget(ex) + (weight != null ? ` @ ${weight} lbs` : '')
+        }
+        back={returnTo}
+      />
 
-      {ex.note && (
+      {ex.note && !isEditing && (
         <p className="mb-4 rounded-xl bg-white p-3 text-sm leading-relaxed text-slate-600 ring-1 ring-slate-200">
           {ex.note}
         </p>
       )}
 
-      {last && (
+      {last && !isEditing && (
         <p className="mb-4 text-sm text-slate-500">
           Last time <span className="text-slate-400">({relativeWhen(last.performedOn)})</span>:{' '}
           <span className="font-medium text-slate-700">{formatSets(ex, last.sets)}</span>
@@ -218,12 +234,14 @@ export default function LogExercise() {
             − Remove set
           </button>
         )}
-        <Link to={`/history/${ex.id}`} className="ml-auto self-center font-medium text-steel-600 active:underline">
-          History
-        </Link>
+        {!isEditing && (
+          <Link to={`/history/${ex.id}`} className="ml-auto self-center font-medium text-steel-600 active:underline">
+            History
+          </Link>
+        )}
       </div>
 
-      {completed && ex.increment && (
+      {completed && ex.increment && !isEditing && (
         <div className="mt-5 rounded-xl bg-emerald-50 p-3 text-sm font-medium text-emerald-700 ring-1 ring-emerald-200">
           ✅ Hit every set at {ex.repHigh} reps — next time go {(weight ?? ex.startWeight ?? 0) + ex.increment} lbs (+
           {ex.increment}).
@@ -231,7 +249,21 @@ export default function LogExercise() {
       )}
 
       <div className="safe-bottom fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-slate-200 bg-[#eef1f6]/95 p-4 backdrop-blur">
-        <PrimaryButton onClick={save}>Save workout</PrimaryButton>
+        {isEditing ? (
+          <div className="flex gap-3">
+            <button
+              onClick={remove}
+              className="rounded-xl border border-rose-300 px-4 py-3.5 text-base font-semibold text-rose-600 active:bg-rose-50"
+            >
+              Delete
+            </button>
+            <div className="flex-1">
+              <PrimaryButton onClick={save}>Save changes</PrimaryButton>
+            </div>
+          </div>
+        ) : (
+          <PrimaryButton onClick={save}>Save workout</PrimaryButton>
+        )}
       </div>
     </div>
   );

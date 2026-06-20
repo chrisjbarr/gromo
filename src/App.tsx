@@ -12,6 +12,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/day/:dayId" element={<Day />} />
         <Route path="/day/:dayId/log/:exerciseId" element={<LogExercise />} />
+        <Route path="/edit/:logId" element={<LogExercise />} />
         <Route path="/history/:exerciseId" element={<History />} />
         <Route path="/data" element={<Data />} />
       </Routes>
