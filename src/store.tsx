@@ -26,6 +26,8 @@ function save(data: GromoData) {
 interface StoreApi {
   data: GromoData;
   logSession: (ex: ExerciseDef, dayId: string, sets: SetEntry[]) => void;
+  updateSession: (logId: string, ex: ExerciseDef, sets: SetEntry[]) => void;
+  deleteSession: (logId: string) => void;
   replaceData: (data: GromoData) => void;
   resetToSeed: () => void;
 }
@@ -62,11 +64,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // Edit a past session's sets. Recomputes the per-log `completed` flag so the
+  // level-up chip stays accurate, but deliberately does NOT recompute working
+  // weight — editing fixes the record, it doesn't rewrite progression history.
+  const updateSession = useCallback((logId: string, ex: ExerciseDef, sets: SetEntry[]) => {
+    setData((prev) => ({
+      ...prev,
+      logs: prev.logs.map((l) =>
+        l.id === logId ? { ...l, sets, completed: isCompleted(ex, sets) } : l,
+      ),
+    }));
+  }, []);
+
+  const deleteSession = useCallback((logId: string) => {
+    setData((prev) => ({ ...prev, logs: prev.logs.filter((l) => l.id !== logId) }));
+  }, []);
+
   const replaceData = useCallback((next: GromoData) => setData(next), []);
   const resetToSeed = useCallback(() => setData(buildSeed()), []);
 
   return (
-    <StoreContext.Provider value={{ data, logSession, replaceData, resetToSeed }}>
+    <StoreContext.Provider
+      value={{ data, logSession, updateSession, deleteSession, replaceData, resetToSeed }}
+    >
       {children}
     </StoreContext.Provider>
   );

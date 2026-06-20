@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useStore } from '../store';
 import { Header } from '../components';
 import { sessionScore, formatSets } from '../progression';
@@ -121,7 +121,7 @@ function GroupedHistory({ ex, logsNewestFirst }: { ex: ExerciseDef; logsNewestFi
             </div>
             <div className="divide-y divide-slate-100">
               {g.rows.map((log) => (
-                <div key={log.id} className="flex items-center px-4 py-2.5">
+                <Link key={log.id} to={`/edit/${log.id}`} className="flex items-center px-4 py-2.5 active:bg-slate-50">
                   <span className="w-14 shrink-0 text-xs tabular-nums text-slate-400">{fmtDate(log.performedOn)}</span>
                   <span className="flex-1">
                     <ColoredReps log={log} ex={ex} />
@@ -135,7 +135,7 @@ function GroupedHistory({ ex, logsNewestFirst }: { ex: ExerciseDef; logsNewestFi
                       <span className="text-slate-300">–</span>
                     )}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -150,7 +150,11 @@ function FlatHistory({ ex, logsNewestFirst }: { ex: ExerciseDef; logsNewestFirst
   return (
     <div className="space-y-2">
       {logsNewestFirst.map((log) => (
-        <div key={log.id} className="flex items-center justify-between rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200">
+        <Link
+          key={log.id}
+          to={`/edit/${log.id}`}
+          className="flex items-center justify-between rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200 active:bg-slate-50"
+        >
           <div>
             <div className="text-xs font-medium uppercase tracking-wide text-slate-400">{fmtDate(log.performedOn)}</div>
             <div className="mt-0.5">
@@ -161,7 +165,8 @@ function FlatHistory({ ex, logsNewestFirst }: { ex: ExerciseDef; logsNewestFirst
               )}
             </div>
           </div>
-        </div>
+          <span className="text-slate-300">›</span>
+        </Link>
       ))}
     </div>
   );

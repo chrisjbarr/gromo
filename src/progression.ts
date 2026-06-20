@@ -52,6 +52,18 @@ export function lastLog(logs: SessionLog[], exerciseId: string): SessionLog | un
   return recentLogs(logs, exerciseId)[0];
 }
 
+// "today" / "5 days ago" / "3 weeks ago" — relative phrasing for a past date.
+export function relativeWhen(iso: string): string {
+  const days = Math.round((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 14) return `${days} days ago`;
+  const weeks = Math.round(days / 7);
+  if (weeks < 9) return `${weeks} weeks ago`;
+  const months = Math.round(days / 30);
+  return `${months} month${months === 1 ? '' : 's'} ago`;
+}
+
 // Human-readable summary of a logged session's sets.
 //  - time:        "20s · 25s · 30s"
 //  - bodyweight:  "12 · 12 · 10"
