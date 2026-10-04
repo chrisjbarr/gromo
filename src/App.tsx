@@ -5,13 +5,16 @@ import LogExercise from './screens/LogExercise';
 import History from './screens/History';
 import Data from './screens/Data';
 import ExerciseForm from './screens/ExerciseForm';
+import DayForm from './screens/DayForm';
 
 export default function App() {
   return (
     <div className="mx-auto min-h-screen max-w-md px-4">
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/days/new" element={<DayForm />} />
         <Route path="/day/:dayId" element={<Day />} />
+        <Route path="/day/:dayId/edit" element={<DayForm />} />
         <Route path="/day/:dayId/log/:exerciseId" element={<LogExercise />} />
         <Route path="/day/:dayId/exercise/new" element={<ExerciseForm />} />
         <Route path="/day/:dayId/exercise/:exerciseId" element={<ExerciseForm />} />

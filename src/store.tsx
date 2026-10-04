@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { GromoData, SessionLog, SetEntry, ExerciseDef } from './types';
+import type { GromoData, SessionLog, SetEntry, ExerciseDef, DayDef } from './types';
 import { buildSeed } from './seed';
 import { isCompleted } from './progression';
 import { newId } from './id';
@@ -32,8 +32,21 @@ interface StoreApi {
   deleteExercise: (dayId: string, exerciseId: string) => void;
   moveExercise: (dayId: string, exerciseId: string, delta: -1 | 1) => void;
   clearHistory: (exerciseId?: string) => void;
+  saveDay: (day: DayDef) => void;
+  deleteDay: (dayId: string) => void;
+  moveDay: (dayId: string, delta: -1 | 1) => void;
   replaceData: (data: GromoData) => void;
   resetToSeed: () => void;
+}
+
+// Swap the item at `index` with its neighbor `delta` slots away. Returns the
+// array unchanged when the move would fall off either end.
+function swapped<T>(items: T[], index: number, delta: -1 | 1): T[] {
+  const to = index + delta;
+  if (index < 0 || to < 0 || to >= items.length) return items;
+  const next = [...items];
+  [next[index], next[to]] = [next[to], next[index]];
+  return next;
 }
 
 const StoreContext = createContext<StoreApi | null>(null);
@@ -124,16 +137,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const moveExercise = useCallback((dayId: string, exerciseId: string, delta: -1 | 1) => {
     setData((prev) => ({
       ...prev,
-      days: prev.days.map((d) => {
-        if (d.id !== dayId) return d;
-        const from = d.exerciseIds.indexOf(exerciseId);
-        const to = from + delta;
-        if (from < 0 || to < 0 || to >= d.exerciseIds.length) return d;
-        const exerciseIds = [...d.exerciseIds];
-        [exerciseIds[from], exerciseIds[to]] = [exerciseIds[to], exerciseIds[from]];
-        return { ...d, exerciseIds };
-      }),
+      days: prev.days.map((d) =>
+        d.id === dayId ? { ...d, exerciseIds: swapped(d.exerciseIds, d.exerciseIds.indexOf(exerciseId), delta) } : d,
+      ),
     }));
+  }, []);
+
+  // Add a new day to the end of the list, or rename an existing one.
+  const saveDay = useCallback((day: DayDef) => {
+    setData((prev) => {
+      const exists = prev.days.some((d) => d.id === day.id);
+      return { ...prev, days: exists ? prev.days.map((d) => (d.id === day.id ? day : d)) : [...prev.days, day] };
+    });
+  }, []);
+
+  // Remove a day along with its exercises, their logs and working weights.
+  const deleteDay = useCallback((dayId: string) => {
+    setData((prev) => {
+      const doomed = new Set(prev.days.find((d) => d.id === dayId)?.exerciseIds ?? []);
+      const workingWeight = { ...prev.workingWeight };
+      doomed.forEach((id) => delete workingWeight[id]);
+      return {
+        ...prev,
+        days: prev.days.filter((d) => d.id !== dayId),
+        exercises: prev.exercises.filter((e) => !doomed.has(e.id)),
+        logs: prev.logs.filter((l) => !doomed.has(l.exerciseId)),
+        workingWeight,
+      };
+    });
+  }, []);
+
+  const moveDay = useCallback((dayId: string, delta: -1 | 1) => {
+    setData((prev) => ({ ...prev, days: swapped(prev.days, prev.days.findIndex((d) => d.id === dayId), delta) }));
   }, []);
 
   // Delete logged sessions for one exercise, or for every exercise when no id is
@@ -164,6 +199,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         deleteExercise,
         moveExercise,
         clearHistory,
+        saveDay,
+        deleteDay,
+        moveDay,
         replaceData,
         resetToSeed,
       }}

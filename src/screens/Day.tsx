@@ -33,6 +33,9 @@ export default function Day() {
     <div className="safe-bottom">
       <Header title={day.name} subtitle={day.subtitle} back="/" showHome={false} action={toggle} />
       <div className="space-y-3">
+        {exercises.length === 0 && !editing && (
+          <p className="text-slate-500">No exercises yet. Tap Edit to add some.</p>
+        )}
         {exercises.map((ex, i) => {
           const trend = trendFor(ex, data.logs);
           const last = lastLog(data.logs, ex.id);
