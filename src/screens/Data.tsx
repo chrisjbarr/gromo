@@ -5,7 +5,7 @@ import { demoData } from '../demo';
 import type { GromoData } from '../types';
 
 export default function Data() {
-  const { data, replaceData, resetToSeed } = useStore();
+  const { data, replaceData, resetToSeed, clearHistory } = useStore();
   const fileInput = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -80,7 +80,24 @@ export default function Data() {
 
         <button
           onClick={() => {
-            if (confirm('Reset all data back to the starting program? This erases your logged sessions.')) {
+            if (
+              confirm(
+                `Delete all ${sessionCount} logged sessions? Your exercises are kept, and weights go back to their starting values. This can't be undone.`,
+              )
+            ) {
+              clearHistory();
+              setMsg('Cleared all logged history.');
+            }
+          }}
+          disabled={sessionCount === 0}
+          className="w-full rounded-xl py-3 text-sm font-medium text-rose-500 active:bg-rose-50 disabled:opacity-40"
+        >
+          Clear all history
+        </button>
+
+        <button
+          onClick={() => {
+            if (confirm('Reset all data back to the starting program? This erases your logged sessions and any exercise changes.')) {
               resetToSeed();
               setMsg('Reset to the starting program.');
             }

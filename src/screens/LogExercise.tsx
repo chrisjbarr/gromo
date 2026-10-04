@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../store';
-import { Header, PrimaryButton } from '../components';
+import { Header, PrimaryButton, Stepper } from '../components';
 import { formatTarget, isCompleted, lastLog, formatSets, relativeWhen } from '../progression';
 import type { SetEntry, ExerciseDef } from '../types';
 
@@ -38,73 +38,6 @@ function initialSets(
     return { reps: defaultReps(ex, i, lastSets, leveledUp), weight: weight ?? ex.startWeight };
   });
 }
-
-function Stepper({
-  label,
-  hint,
-  value,
-  step,
-  min,
-  maxed,
-  low,
-  onChange,
-}: {
-  label: string;
-  hint?: string;
-  value: number | undefined;
-  step: number;
-  min: number;
-  maxed?: boolean;
-  low?: boolean;
-  onChange: (v: number) => void;
-}) {
-  const v = value ?? 0;
-  const bump = (delta: number) => onChange(Math.max(min, Math.round((v + delta) * 100) / 100));
-  const borderCls = maxed
-    ? 'border-emerald-400 ring-1 ring-emerald-300'
-    : low
-      ? 'border-rose-300 ring-1 ring-rose-200'
-      : 'border-slate-300';
-  const inputCls = maxed
-    ? 'border-emerald-200 text-emerald-600'
-    : low
-      ? 'border-rose-200 text-rose-500'
-      : 'border-slate-200 text-slate-900';
-  return (
-    <div className="flex flex-1 flex-col gap-1">
-      <span className="flex items-baseline gap-1 text-xs font-medium text-slate-500">
-        {label}
-        {hint && <span className="text-slate-400">{hint}</span>}
-      </span>
-      <div className={`flex items-stretch overflow-hidden rounded-xl border bg-white ${borderCls}`}>
-        <button
-          type="button"
-          onClick={() => bump(-step)}
-          aria-label={`Decrease ${label}`}
-          className="px-3 text-xl font-bold text-slate-500 active:bg-slate-100"
-        >
-          −
-        </button>
-        <input
-          type="number"
-          inputMode="decimal"
-          value={value ?? ''}
-          onChange={(e) => onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-          className={`w-full min-w-0 border-x py-2.5 text-center text-lg font-bold focus:outline-none focus:ring-2 focus:ring-inset focus:ring-steel-200 ${inputCls}`}
-        />
-        <button
-          type="button"
-          onClick={() => bump(step)}
-          aria-label={`Increase ${label}`}
-          className="px-3 text-xl font-bold text-slate-500 active:bg-slate-100"
-        >
-          +
-        </button>
-      </div>
-    </div>
-  );
-}
-
 
 export default function LogExercise() {
   const { dayId, exerciseId, logId } = useParams();

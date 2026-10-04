@@ -174,7 +174,7 @@ function FlatHistory({ ex, logsNewestFirst }: { ex: ExerciseDef; logsNewestFirst
 
 export default function History() {
   const { exerciseId } = useParams();
-  const { data } = useStore();
+  const { data, clearHistory } = useStore();
   const ex = data.exercises.find((e) => e.id === exerciseId);
 
   if (!ex) return <Header title="Not found" back="/" />;
@@ -214,6 +214,23 @@ export default function History() {
         ) : (
           <FlatHistory ex={ex} logsNewestFirst={newestFirst} />
         ))}
+
+      {logs.length > 0 && (
+        <>
+          <p className="mt-6 text-center text-xs text-slate-400">Tap a session to edit or delete it.</p>
+          <button
+            onClick={() => {
+              const reset = ex.startWeight != null ? ` Weight goes back to ${ex.startWeight} lbs.` : '';
+              if (confirm(`Delete all ${logs.length} logged sessions for ${ex.name}?${reset} This can't be undone.`)) {
+                clearHistory(ex.id);
+              }
+            }}
+            className="mt-2 w-full rounded-xl py-3 text-sm font-medium text-rose-500 active:bg-rose-50"
+          >
+            Clear history for this exercise
+          </button>
+        </>
+      )}
     </div>
   );
 }
